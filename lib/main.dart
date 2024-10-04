@@ -5,6 +5,8 @@ import 'package:path_provider/path_provider.dart';
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -19,6 +21,8 @@ class MyApp extends StatelessWidget {
 
 // Pantalla de Splash
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
@@ -27,7 +31,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 3), () {
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => GridProductos()));
     });
@@ -35,7 +39,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       backgroundColor: Colors.white,
       body: Center(
         child: Column(
@@ -53,6 +57,8 @@ class _SplashScreenState extends State<SplashScreen> {
 }
 
 class GridProductos extends StatefulWidget {
+  const GridProductos({super.key});
+
   @override
   _GridProductosState createState() => _GridProductosState();
 }
@@ -72,6 +78,8 @@ class _GridProductosState extends State<GridProductos> {
 
   // Cantidad ingresada por el usuario para pagar
   final TextEditingController cantidadController = TextEditingController();
+  final TextEditingController cantidadAdicionalController =
+      TextEditingController();
 
   // Función para calcular el total
   void calcularTotal() {
@@ -102,7 +110,7 @@ class _GridProductosState extends State<GridProductos> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Selecciona Productos'),
+        title: const Text('Selecciona Productos'),
       ),
       body: mostrarGrid ? buildGrid() : buildResumenPago(),
     );
@@ -114,8 +122,8 @@ class _GridProductosState extends State<GridProductos> {
       children: [
         Expanded(
           child: GridView.builder(
-            padding: EdgeInsets.all(10.0),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            padding: const EdgeInsets.all(10.0),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
@@ -131,10 +139,28 @@ class _GridProductosState extends State<GridProductos> {
           onPressed: () {
             setState(() {
               calcularTotal();
-              mostrarGrid = false;
+              if (totalPagar != 0.0) {
+                calcularTotal();
+                mostrarGrid = false;
+              } else {
+                showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) => AlertDialog(
+                    title: const Text('No hay productos seleccionados'),
+                    content: const Text(
+                        'Por favor, selecciona al menos un producto.'),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, 'OK'),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+              }
             });
           },
-          child: Text('Pagar'),
+          child: const Text('Pagar'),
         ),
       ],
     );
@@ -148,10 +174,11 @@ class _GridProductosState extends State<GridProductos> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Expanded(
-            child: Image.asset('assets/product${index + 1}.png'),
+            child: Image.asset('assets/product${index + 1}.jpg'),
           ),
-          Text('Producto ${index + 1}', style: TextStyle(fontSize: 18)),
-          Text('Precio: \$${precios[index]}', style: TextStyle(fontSize: 16)),
+          Text('Producto ${index + 1}', style: const TextStyle(fontSize: 18)),
+          Text('Precio: \$${precios[index]}',
+              style: const TextStyle(fontSize: 16)),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -163,7 +190,7 @@ class _GridProductosState extends State<GridProductos> {
                     }
                   });
                 },
-                icon: Icon(Icons.remove),
+                icon: const Icon(Icons.remove),
               ),
               Text('${cantidades[index]}'),
               IconButton(
@@ -172,7 +199,7 @@ class _GridProductosState extends State<GridProductos> {
                     cantidades[index]++;
                   });
                 },
-                icon: Icon(Icons.add),
+                icon: const Icon(Icons.add),
               ),
             ],
           ),
@@ -189,29 +216,42 @@ class _GridProductosState extends State<GridProductos> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text('Total a pagar: \$${totalPagar.toStringAsFixed(2)}',
-              style: TextStyle(fontSize: 24)),
-          SizedBox(height: 20),
+              style: const TextStyle(fontSize: 24)),
+          const SizedBox(height: 20),
           TextField(
             controller: cantidadController,
             keyboardType: TextInputType.number,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: 'Cantidad a pagar',
               border: OutlineInputBorder(),
             ),
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
+          TextField(
+            controller: cantidadAdicionalController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Monto adicional a pagar (Opcional)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () {
+              double cantidadAdicional = cantidadAdicionalController.text != ""
+                  ? double.tryParse(cantidadAdicionalController.text) ?? 0.0
+                  : 0.0;
               double cantidadIngresada =
                   double.tryParse(cantidadController.text) ?? 0.0;
-              if (cantidadIngresada >= totalPagar) {
-                double cambio = cantidadIngresada - totalPagar;
+              if (cantidadIngresada >= totalPagar + cantidadAdicional) {
+                double cambio =
+                    cantidadIngresada - totalPagar + cantidadAdicional;
                 guardarPago(totalPagar); // Guardar el pago en el archivo
 
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: Text('Pago realizado'),
+                    title: const Text('Pago realizado'),
                     content: Text(
                         '¡Pago exitoso! Tu cambio es: \$${cambio.toStringAsFixed(2)}'),
                     actions: [
@@ -224,7 +264,7 @@ class _GridProductosState extends State<GridProductos> {
                           });
                           Navigator.pop(context);
                         },
-                        child: Text('Aceptar'),
+                        child: const Text('Aceptar'),
                       ),
                     ],
                   ),
@@ -233,22 +273,22 @@ class _GridProductosState extends State<GridProductos> {
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: Text('Pago insuficiente'),
-                    content: Text(
+                    title: const Text('Pago insuficiente'),
+                    content: const Text(
                         'La cantidad ingresada es menor al total. Por favor, ingresa una cantidad válida.'),
                     actions: [
                       TextButton(
                         onPressed: () {
                           Navigator.pop(context);
                         },
-                        child: Text('Aceptar'),
+                        child: const Text('Aceptar'),
                       ),
                     ],
                   ),
                 );
               }
             },
-            child: Text('Confirmar Pago'),
+            child: const Text('Confirmar Pago'),
           ),
         ],
       ),
